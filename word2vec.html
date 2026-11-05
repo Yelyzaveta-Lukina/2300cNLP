@@ -250,6 +250,7 @@
   'use strict';
   const MODEL = 'word2vec/model/';
   const K = 10, MAX_GROUPS = 4;
+  const POS3 = ['top center', 'bottom center', 'middle right', 'top right', 'bottom right'];  // left-anchored 3D labels get clipped by Plotly's WebGL text
   const COLORS = ['#2E6B74', '#E8897F', '#C99A2E', '#9B6B98'];
   const EXAMPLES = ['king', 'paris', 'dog', 'computer', 'music', 'doctor', 'river', 'france'];
   const $ = id => document.getElementById(id);
@@ -499,22 +500,24 @@
         textposition: 'top center', textfont: { ...font, size: 12 }, marker: { size: 10, color: col, opacity: .85, line: { color: '#fff', width: 1 } },
         hovertext: nb.map(hov), hoverinfo: 'text', legendgroup: g.word });
       t2.push({ type: 'scatter', mode: 'markers+text', x: [C(q, 0)], y: [C(q, 1)], text: [g.word], showlegend: false, legendgroup: g.word,
-        textposition: 'bottom center', textfont: { ...font, size: 15, color: col }, marker: { size: 20, color: col, symbol: 'star', line: { color: '#fff', width: 1.5 } },
+        textposition: 'bottom center', textfont: { ...font, size: 15, color: col }, marker: { size: 16, color: col, symbol: 'diamond', line: { color: '#fff', width: 1.5 } },
         hovertext: [hov(q)], hoverinfo: 'text' });
       t3.push({ type: 'scatter3d', mode: 'markers+text', name: g.word, x: nb.map(p => C(p, 0)), y: nb.map(p => C(p, 1)), z: nb.map(p => C(p, 2)), text: nb.map(p => words[p.idx]),
-        textfont: { ...font, size: 11 }, marker: { size: 5, color: col, opacity: .9 }, hovertext: nb.map(hov), hoverinfo: 'text', legendgroup: g.word });
+        textfont: { ...font, size: 10 }, textposition: nb.map((_, i) => POS3[i % POS3.length]), marker: { size: 5, color: col, opacity: .9 }, hovertext: nb.map(hov), hoverinfo: 'text', legendgroup: g.word });
       t3.push({ type: 'scatter3d', mode: 'markers+text', x: [C(q, 0)], y: [C(q, 1)], z: [C(q, 2)], text: [g.word], showlegend: false, legendgroup: g.word,
-        textfont: { ...font, size: 15, color: col }, marker: { size: 10, color: col, symbol: 'diamond', line: { color: '#fff', width: 1 } }, hovertext: [hov(q)], hoverinfo: 'text' });
+        textfont: { ...font, size: 14, color: col }, textposition: 'bottom center', marker: { size: 9, color: col, symbol: 'diamond', line: { color: '#fff', width: 1 } }, hovertext: [hov(q)], hoverinfo: 'text' });
     });
-    const ax = k => ({ title: { text: `PC${k + 1} (${pct(k)}% var)`, font: { ...font, size: 12, color: '#5F6B76' } }, zeroline: false, gridcolor: '#ECE8E1', tickfont: { size: 10, color: '#5F6B76' } });
+    // pad each axis so labels near the edges are not clipped
+    const range = (k, padFrac) => { const v = comps[k].coords; let lo = Math.min(...v), hi = Math.max(...v); const pad = (hi - lo || 1) * padFrac; return [lo - pad, hi + pad]; };
+    const ax = k => ({ range: range(k, .14), title: { text: `PC${k + 1} (${pct(k)}% var)`, font: { ...font, size: 12, color: '#5F6B76' } }, zeroline: false, gridcolor: '#ECE8E1', tickfont: { size: 10, color: '#5F6B76' } });
     const showLegend = groups.length > 1;
     const legend = { orientation: 'h', x: 0, y: 1.08, font: { ...font, size: 12 } };
-    Plotly.react('plot2d', t2, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font, margin: { l: 50, r: 16, t: 24, b: 44 },
+    Plotly.react('plot2d', t2, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font, margin: { l: 56, r: 28, t: 28, b: 48 },
       xaxis: ax(0), yaxis: ax(1), showlegend: showLegend, legend, hoverlabel: { font: { family: 'Inter' } } },
       { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
-    const ax3 = k => ({ ...ax(k), backgroundcolor: '#FBFAF8', showbackground: true, title: { text: `PC${k + 1} (${pct(k)}%)`, font: { ...font, size: 11, color: '#5F6B76' } } });
-    Plotly.react('plot3d', t3, { paper_bgcolor: 'rgba(0,0,0,0)', font, margin: { l: 0, r: 0, t: 10, b: 0 }, showlegend: showLegend, legend,
-      scene: { xaxis: ax3(0), yaxis: ax3(1), zaxis: ax3(2), camera: { eye: { x: 1.5, y: 1.5, z: 1.1 } }, aspectmode: 'cube' }, hoverlabel: { font: { family: 'Inter' } } },
+    const ax3 = k => ({ ...ax(k), range: range(k, .12), backgroundcolor: '#FBFAF8', showbackground: true, title: { text: `PC${k + 1} (${pct(k)}%)`, font: { ...font, size: 11, color: '#5F6B76' } } });
+    Plotly.react('plot3d', t3, { paper_bgcolor: 'rgba(0,0,0,0)', font, margin: { l: 28, r: 28, t: 16, b: 10 }, showlegend: showLegend, legend,
+      scene: { xaxis: ax3(0), yaxis: ax3(1), zaxis: ax3(2), camera: { eye: { x: 1.95, y: 1.95, z: 1.35 } }, aspectmode: 'cube' }, hoverlabel: { font: { family: 'Inter' } } },
       { responsive: true, displaylogo: false });
   }
 
