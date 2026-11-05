@@ -30,10 +30,10 @@ async function waitForServer(url, ms = 10000) {
 
 // Selectors (kept in one place so they are easy to adjust to the page).
 const SEL = {
-  wordInput: '#word-input, input[type=search], input[type=text]',
-  results: '#results li, #neighbors li, [data-neighbor]',
-  plot2d: '#plot-2d, #plot2d',
-  plot3d: '#plot-3d, #plot3d',
+  wordInput: '#q',
+  results: '#nnList li',
+  plot2d: '#plot2d',
+  plot3d: '#plot3d',
 };
 
 async function submitWord(page, word) {
@@ -80,14 +80,14 @@ async function submitWord(page, word) {
     // 3. Nearest neighbours for "king"
     await submitWord(page, 'king');
     await page.waitForFunction((s) => document.querySelectorAll(s).length > 0, SEL.results, { timeout: 10000 }).catch(() => {});
-    const words = await page.$$eval(SEL.results, (els) => els.map((e) => (e.getAttribute('data-neighbor') || e.querySelector('[data-word], .word')?.textContent || e.textContent).trim().toLowerCase()));
+    const words = await page.$$eval(SEL.results, (els) => els.map((e) => (e.getAttribute('data-neighbor') || e.querySelector('.w')?.textContent || e.textContent).trim().toLowerCase()));
     check('exactly 10 neighbours for "king"', words.length === 10, `got ${words.length}: ${words.map((w) => w.split(/\s+/)[0]).join(', ')}`);
     check('"king" is not among its own neighbours', words.length > 0 && !words.some((w) => w.split(/\s+/)[0] === 'king'));
 
     // 4. Plots
     await page.waitForTimeout(1500);
-    const has2d = await page.locator(`${SEL.plot2d} .scatterlayer, .js-plotly-plot .cartesianlayer .scatterlayer`).count();
-    const has3d = await page.locator(`${SEL.plot3d} .gl-container, .js-plotly-plot .gl-container, .js-plotly-plot [id^=scene]`).count();
+    const has2d = await page.locator(`${SEL.plot2d} .scatterlayer .trace`).count();
+    const has3d = await page.locator(`${SEL.plot3d} .gl-container, ${SEL.plot3d} [id^=scene]`).count();
     const plotCount = await page.locator('.js-plotly-plot').count();
     check('2D Plotly scatter is rendered', has2d > 0);
     check('3D Plotly scene is rendered', has3d > 0);
@@ -96,11 +96,11 @@ async function submitWord(page, word) {
 
     // 5. Unknown word
     await submitWord(page, 'qwzxv');
-    const body = (await page.locator('body').innerText()).toLowerCase();
+    const body = (await page.locator('#status').innerText()).toLowerCase();
     check('unknown word shows a not-found message', /not in (the )?vocab|not found|isn.t in|unknown word|no such word|not in the model/.test(body));
 
     // 6. Analogy
-    const analogyInputs = page.locator('#analogy input, form[data-analogy] input, [id*=analogy] input');
+    const analogyInputs = page.locator('#anaForm input');
     const n = await analogyInputs.count();
     let analogyOk = false, analogyDetail = `found ${n} analogy inputs`;
     if (n >= 3) {
@@ -109,8 +109,8 @@ async function submitWord(page, word) {
       await analogyInputs.nth(2).fill('woman');
       await analogyInputs.nth(2).press('Enter');
       await page.waitForTimeout(800);
-      const txt = (await page.locator('#analogy-results, #analogy-result, [id*=analogy] ol, [id*=analogy] ul').first().innerText().catch(() => '')).trim();
-      analogyOk = txt.length > 0;
+      const txt = (await page.locator('#anaOut').innerText().catch(() => '')).trim();
+      analogyOk = (await page.locator('#anaOut .chip').count()) > 0;
       analogyDetail = txt.replace(/\s+/g, ' ').slice(0, 120);
     }
     check('analogy king − man + woman returns results', analogyOk, analogyDetail);
