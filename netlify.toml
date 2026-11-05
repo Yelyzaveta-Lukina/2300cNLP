@@ -1,2 +1,12 @@
 [build]
   publish = "."
+
+[[headers]]
+  for = "/word2vec/model/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/word2vec/model/vectors.bin"
+  [headers.values]
+    Content-Type = "application/octet-stream"

@@ -1,0 +1,8 @@
+# gensim full model + side arrays (not deployed; large)
+word2vec/model/*.model
+word2vec/model/*.npy
+*.model.wv.vectors.npy
+*.syn1neg.npy
+node_modules/
+__pycache__/
+*.pyc
