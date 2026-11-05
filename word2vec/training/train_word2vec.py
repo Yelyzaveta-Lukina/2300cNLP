@@ -20,7 +20,6 @@ from pathlib import Path
 
 import numpy as np
 from gensim.models import Word2Vec
-from gensim.models.word2vec import LineSentence
 
 CORPUS = Path(sys.argv[1] if len(sys.argv) > 1 else "text8.gz")
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "../model")
